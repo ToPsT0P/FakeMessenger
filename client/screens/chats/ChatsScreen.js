@@ -10,7 +10,7 @@ import ChatListItem from "../../entities/chatListItem/ChatListItem";
 import Navbar from "../../widgets/Navbar/Navbar";
 import {testArray} from "./testArray";
 
-// Styles
+// TODO Styles
 
 const Layout = styled.View`
     background-color: #1C1C1E;
@@ -23,10 +23,10 @@ const ChatsScreen = ({ navigation }) => {
     const [isLoading, setIsLoading] = React.useState(true)
 
 
-// TODO Здесь будет логика по прокидыванию
+// TODO Data Logic in future
 
     const chatsFetch = () => {
-        setTimeout(() => {setIsLoading(false)}, 3000)
+        setTimeout(() => {setIsLoading(false)}, 300)
 
     }
 
@@ -40,11 +40,11 @@ const ChatsScreen = ({ navigation }) => {
                 screenName={"Chats"}
                 leftButton=
                     {<TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                        <IconAwesome name="user-o" size={26} color="#fff" />
+                        <IconAwesome name="user-o" size={24} color="#fff" />
                     </TouchableOpacity>}
                     rightButton=
                     {<TouchableOpacity>
-                        <IconAwesome name="plus-square-o" size={33} color="#fff" />
+                        <IconAwesome name="plus-square-o" size={30} color="#fff" />
                     </TouchableOpacity>}
                 isSearchBar={true}
             />
@@ -54,7 +54,7 @@ const ChatsScreen = ({ navigation }) => {
                 refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => chatsFetch()} />}
                 data={testArray}
                 renderItem={({item}) => (
-                    <TouchableOpacity>
+                    <TouchableOpacity  onPress={() => navigation.navigate('CurrentChat')}>
                         <ChatListItem props={item}/>
                     </TouchableOpacity>
                 )}

@@ -1,8 +1,6 @@
 import styled from 'styled-components/native';
-import { StatusBar, TouchableOpacity } from "react-native";
 import IconEvil from "react-native-vector-icons/EvilIcons";
 
-// Стилизованные компоненты должны быть здесь, вне функции
 const NavbarContainer = styled.View`
   height: fit-content;
   width: 100%;
@@ -27,7 +25,7 @@ const SearchContainer = styled.View`
 
 const Search = styled.TextInput`
   flex: 1;
-  height: 46px;
+  height: 42px;
   color: rgba(255, 255, 255, 0.7);
 `;
 
@@ -56,7 +54,7 @@ const Navbar = ({ screenName, leftButton, rightButton, isSearchBar }) => {
 
             {isSearchBar && (
                 <SearchContainer>
-                    <IconEvil name="search" size={24} color="rgba(255,255,255,0.7)" />
+                    <IconEvil name="search" size={22} color="rgba(255,255,255,0.7)" />
                     <Search placeholder="Search for chats" placeholderTextColor="rgba(255,255,255,0.7)" />
                 </SearchContainer>
             )}

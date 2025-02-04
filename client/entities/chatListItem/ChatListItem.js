@@ -1,6 +1,5 @@
 import styled from "styled-components/native"
 
-
 const Chat = styled.View`
     display: flex;
     align-items: center;
@@ -14,6 +13,11 @@ const Chat = styled.View`
 const ChatImage = styled.Image`
     width: 60px;
     height: 60px;
+    border-bottom-left-radius: 999px;
+    border-bottom-right-radius: 999px;
+    border-top-left-radius: 999px;
+    border-top-right-radius: 999px;
+    
 `;
 
 const ChatName = styled.Text`
@@ -56,10 +60,9 @@ const ChatTime = styled.Text`
 
 const ChatListItem = ({props}) => {
 
-
     return (
         <Chat>
-            <ChatImage source={require("../../shared/ico/user.png")} />
+            <ChatImage source={props.avatar} />
             <ChatInfo>
                 <ChatNameAndTime>
                     <ChatName>{props.userSend}</ChatName>
