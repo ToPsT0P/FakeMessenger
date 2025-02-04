@@ -1,20 +1,25 @@
-import styled from 'styled-components/native';
-import Navbar from "./widgets/Navbar/Navbar";
-import ChatsTab from "./tabs/chats/ChatsTab";
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 
-const Layout = styled.ScrollView`
-    background-color: #1C1C1E;
-    width: 100%;
-    height: 100%;
-`;
+import ProfileScreen from "./screens/profile/ProfileScreen";
+import ChatsScreen from "./screens/chats/ChatsScreen";
+import {StatusBar} from "react-native";
 
+
+
+
+const Stack = createStackNavigator();
 
 export default function App() {
     return (
-        <Layout>
-            <Navbar/>
-            <ChatsTab/>
+        <NavigationContainer>
+            <StatusBar theme="dark" backgroundColor="#1C1C1E" />
 
-        </Layout>
+            <Stack.Navigator initialRouteName="Chats">
+                <Stack.Screen name="Chats" component={ChatsScreen} options={{ headerShown: false }}  />
+                <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+            </Stack.Navigator>
+        </NavigationContainer>
+
     );
 }

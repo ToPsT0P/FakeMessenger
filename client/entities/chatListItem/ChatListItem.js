@@ -30,7 +30,7 @@ const LastMessage = styled.Text`
 const ChatInfo = styled.View`
     display: flex;
     height: 100%;
-    width: 75%;
+    width: 77.5%;
     border-bottom-width: 1px;
     border-bottom-color: #545458;
     border-bottom-style: solid;
@@ -54,16 +54,18 @@ const ChatTime = styled.Text`
 
 
 
-const ChatListItem = () => {
+const ChatListItem = ({props}) => {
+
+
     return (
         <Chat>
-            <ChatImage source={require('../../shared/ico/user.png')} />
+            <ChatImage source={require("../../shared/ico/user.png")} />
             <ChatInfo>
                 <ChatNameAndTime>
-                    <ChatName>Ро-Ро-Рома</ChatName>
-                    <ChatTime>9/29</ChatTime>
+                    <ChatName>{props.userSend}</ChatName>
+                    <ChatTime>{props.dateSend}</ChatTime>
                 </ChatNameAndTime>
-                <LastMessage>Саня, я сегодня никуда не иду, я спать ;)</LastMessage>
+                <LastMessage>{props.message}</LastMessage>
             </ChatInfo>
         </Chat>
     );

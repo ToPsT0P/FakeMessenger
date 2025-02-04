@@ -1,0 +1,69 @@
+import { FlatList, RefreshControl, TouchableOpacity } from "react-native";
+import React from "react";
+import styled from "styled-components";
+
+
+import IconAwesome from "react-native-vector-icons/FontAwesome";
+
+
+import ChatListItem from "../../entities/chatListItem/ChatListItem";
+import Navbar from "../../widgets/Navbar/Navbar";
+import {testArray} from "./testArray";
+
+// Styles
+
+const Layout = styled.View`
+    background-color: #1C1C1E;
+    width: 100%;
+    flex: 1; 
+`;
+
+const ChatsScreen = ({ navigation }) => {
+
+    const [isLoading, setIsLoading] = React.useState(true)
+
+
+// TODO Здесь будет логика по прокидыванию
+
+    const chatsFetch = () => {
+        setTimeout(() => {setIsLoading(false)}, 3000)
+
+    }
+
+    React.useEffect(() => {
+        chatsFetch()
+    }, []);
+
+    return (
+        <Layout>
+            <Navbar
+                screenName={"Chats"}
+                leftButton=
+                    {<TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+                        <IconAwesome name="user-o" size={26} color="#fff" />
+                    </TouchableOpacity>}
+                    rightButton=
+                    {<TouchableOpacity>
+                        <IconAwesome name="plus-square-o" size={33} color="#fff" />
+                    </TouchableOpacity>}
+                isSearchBar={true}
+            />
+
+
+            <FlatList
+                refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => chatsFetch()} />}
+                data={testArray}
+                renderItem={({item}) => (
+                    <TouchableOpacity>
+                        <ChatListItem props={item}/>
+                    </TouchableOpacity>
+                )}
+
+            />
+        </Layout>
+
+
+    );
+};
+
+export default ChatsScreen;
