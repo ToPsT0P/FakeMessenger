@@ -93,9 +93,12 @@ const ProfileScreen = ({ navigation }) => {
             <Navbar
                 screenName={"Profile"}
                 leftButton=
-                    {<TouchableOpacity onPress={() => navigation.navigate('Chats')}>
-                        <IconAwesome name="angle-left" size={24} color="#fff" />
-                    </TouchableOpacity>}
+                    {
+                <View style={{width:'42px'}}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Chats')} >
+                        <IconAwesome name="angle-left" size={28} color="#fff" />
+                    </TouchableOpacity>
+                </View>}
                 rightButton=
                     {<TouchableOpacity>
                         <IconAwesome name="pencil" size={24} color="#fff" />

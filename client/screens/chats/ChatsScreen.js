@@ -1,4 +1,4 @@
-import { FlatList, RefreshControl, TouchableOpacity } from "react-native";
+import {FlatList, ImageBackground, RefreshControl, TouchableOpacity} from "react-native";
 import React from "react";
 import styled from "styled-components";
 
@@ -12,6 +12,7 @@ import {testArray} from "./testArray";
 
 // TODO Styles
 
+
 const Layout = styled.View`
     background-color: #1C1C1E;
     width: 100%;
@@ -19,6 +20,7 @@ const Layout = styled.View`
 `;
 
 const ChatsScreen = ({ navigation }) => {
+
 
     const [isLoading, setIsLoading] = React.useState(true)
 

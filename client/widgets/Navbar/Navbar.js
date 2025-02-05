@@ -1,5 +1,6 @@
 import styled from 'styled-components/native';
 import IconEvil from "react-native-vector-icons/EvilIcons";
+import {Image} from "react-native";
 
 const NavbarContainer = styled.View`
   height: fit-content;
@@ -30,9 +31,11 @@ const Search = styled.TextInput`
 `;
 
 const NavbarButton = styled.Text`
-  color: #fff;
-  font-size: 16px;
-  padding: 6px;
+    color: #fff;
+    font-size: 16px;
+    padding: 6px;
+    width: 40px;
+    
 `;
 
 const TabName = styled.Text`
@@ -41,13 +44,15 @@ const TabName = styled.Text`
   color: #fff;
 `;
 
-const Navbar = ({ screenName, leftButton, rightButton, isSearchBar }) => {
+const Navbar = ({ screenName, leftButton, rightButton, isSearchBar, photoIfExist }) => {
     return (
         <NavbarContainer>
             <NavbarButton>
                 {leftButton}
             </NavbarButton>
-            <TabName>{screenName}</TabName>
+            <TabName>
+                {screenName}
+            </TabName>
             <NavbarButton>
                 {rightButton}
             </NavbarButton>
