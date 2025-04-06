@@ -47,6 +47,7 @@ const ChatTextInput = styled.TextInput`
     max-height: 120px;
 `;
 
+
 const CurrentChatScreen = ({ navigation }) => {
     const [inputHeight, setInputHeight] = useState(35);
 
