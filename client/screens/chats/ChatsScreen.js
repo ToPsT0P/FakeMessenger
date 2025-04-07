@@ -1,14 +1,14 @@
 import {FlatList, ImageBackground, RefreshControl, TouchableOpacity} from "react-native";
-import React from "react";
+import React, {useState} from "react";
 import styled from "styled-components";
-
+import {testArray} from "./testArray";
 
 import IconAwesome from "react-native-vector-icons/FontAwesome";
 
 
 import ChatListItem from "../../entities/chatListItem/ChatListItem";
 import Navbar from "../../widgets/Navbar/Navbar";
-import {testArray} from "./testArray";
+import axios from "axios";
 
 // TODO Styles
 
@@ -24,12 +24,9 @@ const ChatsScreen = ({ navigation }) => {
 
     const [isLoading, setIsLoading] = React.useState(true)
 
-
-// TODO Data Logic in future
-
-    const chatsFetch = () => {
-        setTimeout(() => {setIsLoading(false)}, 300)
-
+    const chatsFetch = async () => {
+        const response = await axios.get(`http://${process.env.EXPO_PUBLIC_IPV4}/api/chats/chat2`) //TODO Сделать фетч всех чатов
+        setIsLoading(false)
     }
 
     React.useEffect(() => {

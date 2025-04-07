@@ -15,9 +15,9 @@ app.post('/api/users', (req, res) => {
     const chats = JSON.stringify([]);
 
     const sql = `
-    INSERT INTO users (ID, userName, login, password, chats)
-    VALUES (?, ?, ?, ?, ?)
-  `;
+        INSERT INTO users (ID, userName, login, password, chats)
+        VALUES (?, ?, ?, ?, ?)
+    `;
     db.run(sql, [userID, userName, login, password, chats], function(err) {
         if (err) {
             console.error(err);
@@ -33,6 +33,35 @@ app.post('/api/users', (req, res) => {
                 chats: []
             }
         });
+    });
+});
+
+// ===============
+//  GET ALL USERS
+// ===============
+app.get('/api/users', (req, res) => {
+    const sql = 'SELECT * FROM users';
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Ошибка при получении пользователей' });
+        }
+        const users = rows.map(row => {
+            let chatsArray = [];
+            try {
+                chatsArray = JSON.parse(row.chats);
+            } catch (e) {
+                chatsArray = [];
+            }
+            return {
+                ID: row.ID,
+                userName: row.userName,
+                login: row.login,
+                password: row.password,
+                chats: chatsArray
+            };
+        });
+        res.json({ users });
     });
 });
 
@@ -66,6 +95,45 @@ app.get('/api/users/:id', (req, res) => {
 });
 
 // ===============
+//  LOGIN (AUTHENTICATION)
+// ===============
+app.post('/api/login', (req, res) => {
+    const { login, password } = req.body;
+    if (!login || !password) {
+        return res.status(400).json({ error: 'Необходимо указать логин и пароль' });
+    }
+    const sql = 'SELECT * FROM users WHERE login = ?';
+    db.get(sql, [login], (err, row) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Ошибка при поиске пользователя' });
+        }
+        if (!row) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+        // Простая проверка пароля без шифрования
+        if (row.password !== password) {
+            return res.status(401).json({ error: 'Неверный пароль' });
+        }
+        let chatsArray = [];
+        try {
+            chatsArray = JSON.parse(row.chats);
+        } catch (e) {
+            chatsArray = [];
+        }
+        res.json({
+            message: 'Авторизация успешна',
+            user: {
+                ID: row.ID,
+                userName: row.userName,
+                login: row.login,
+                chats: chatsArray
+            }
+        });
+    });
+});
+
+// ===============
 //  CREATE CHAT
 // ===============
 app.post('/api/chats', (req, res) => {
@@ -76,9 +144,9 @@ app.post('/api/chats', (req, res) => {
     const lastMessage = '';
 
     const sql = `
-    INSERT INTO chats (chatID, messages, lastMessage, joinedUsers)
-    VALUES (?, ?, ?, ?)
-  `;
+        INSERT INTO chats (chatID, messages, lastMessage, joinedUsers)
+        VALUES (?, ?, ?, ?)
+    `;
     db.run(sql, [newChatID, messagesJSON, lastMessage, usersJSON], function(err) {
         if (err) {
             console.error(err);
@@ -107,9 +175,9 @@ app.post('/api/messages', (req, res) => {
 
     const newMessageID = uuidv4();
     const sql = `
-    INSERT INTO messages (messageID, chatID, text, userSend)
-    VALUES (?, ?, ?, ?)
-  `;
+        INSERT INTO messages (messageID, chatID, text, userSend)
+        VALUES (?, ?, ?, ?)
+    `;
     db.run(sql, [newMessageID, chatID, text, userSend], function(err) {
         if (err) {
             console.error(err);
@@ -139,10 +207,10 @@ app.post('/api/messages', (req, res) => {
             const updatedLastMessage = text;
 
             const updateChat = `
-        UPDATE chats
-        SET messages = ?, lastMessage = ?
-        WHERE chatID = ?
-      `;
+                UPDATE chats
+                SET messages = ?, lastMessage = ?
+                WHERE chatID = ?
+            `;
             db.run(updateChat, [updatedMessages, updatedLastMessage, chatID], function(err) {
                 if (err) {
                     console.error(err);
@@ -199,11 +267,11 @@ app.get('/api/chats/:chatID', (req, res) => {
         }
 
         const sqlMessages = `
-      SELECT *
-      FROM messages
-      WHERE messageID IN (${placeholders})
-      ORDER BY createdTime ASC
-    `;
+            SELECT *
+            FROM messages
+            WHERE messageID IN (${placeholders})
+            ORDER BY createdTime ASC
+        `;
         db.all(sqlMessages, messagesArray, (err, messagesRows) => {
             if (err) {
                 console.error(err);

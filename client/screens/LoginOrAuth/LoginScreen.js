@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from 'react'
 import styled from "styled-components/native";
+import axios from "axios";
+import {Alert} from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Layout = styled.View`
   flex: 1;
@@ -49,25 +52,49 @@ const ButtonText = styled.Text`
 `;
 
 
-const LoginFunction = () => {
-
-}
 
 const LoginScreen = ({ navigation }) => {
+
+    const [login, setLogin] = useState("");
+    const [password, setPassword] = useState("");
+
+    const LoginLogic = async () => {
+
+        try {
+            const response = await axios.post(`http://${process.env.EXPO_PUBLIC_IPV4}/api/login`, {
+
+                login: login,
+                password: password
+            });
+            await AsyncStorage.setItem("userId", response.data.user.ID);
+
+            navigation.navigate("Chats")
+        } catch (error) {
+            console.log("Ошибка при создании пользователя:", error.message);
+            Alert.alert("Ошибка", "Не удалось создать пользователя");
+        }
+    };
+
+
     return (
         <Layout>
             <Title>Вход</Title>
+
             <Input
                 placeholder="Login"
                 placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                value={login}
+                onChangeText={setLogin}
             />
             <Input
                 placeholder="Password"
                 placeholderTextColor="rgba(255, 255, 255, 0.7)"
                 secureTextEntry
+                value={password}
+                onChangeText={setPassword}
             />
             <ButtonContainer>
-                <AuthButton onPress={() => navigation.navigate("RegisterScreen")}>
+                <AuthButton onPress={() => LoginLogic()}>
                     <ButtonText>Войти в систему</ButtonText>
                 </AuthButton>
                 <AuthButton onPress={() => navigation.navigate("Auth")}>
