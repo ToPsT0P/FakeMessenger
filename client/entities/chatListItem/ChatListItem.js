@@ -1,4 +1,5 @@
 import styled from "styled-components/native"
+import defaultAvatar from "../../shared/ico/defaultAvatart.svg"
 
 const Chat = styled.View`
     display: flex;
@@ -48,13 +49,6 @@ const ChatNameAndTime = styled.View`
     align-items: center;
 `;
 
-const ChatTime = styled.Text`
-    color: #fff;
-    display: flex;
-    align-content: center;
-    align-items: center;
-    font-size: 13px;
-`;
 
 
 
@@ -62,13 +56,12 @@ const ChatListItem = ({props}) => {
 
     return (
         <Chat>
-            <ChatImage source={props.avatar} />
+            <ChatImage source={defaultAvatar} />
             <ChatInfo>
                 <ChatNameAndTime>
-                    <ChatName>{props.userSend}</ChatName>
-                    <ChatTime>{props.dateSend}</ChatTime>
+                    <ChatName>{props.chatID}</ChatName>
                 </ChatNameAndTime>
-                <LastMessage>{props.message}</LastMessage>
+                <LastMessage>{props.lastMessage}</LastMessage>
             </ChatInfo>
         </Chat>
     );

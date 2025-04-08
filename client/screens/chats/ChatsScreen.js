@@ -9,6 +9,7 @@ import IconAwesome from "react-native-vector-icons/FontAwesome";
 import ChatListItem from "../../entities/chatListItem/ChatListItem";
 import Navbar from "../../widgets/Navbar/Navbar";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // TODO Styles
 
@@ -23,11 +24,30 @@ const ChatsScreen = ({ navigation }) => {
 
 
     const [isLoading, setIsLoading] = React.useState(true)
+    const [chats, setChats] = useState()
 
     const chatsFetch = async () => {
-        const response = await axios.get(`http://${process.env.EXPO_PUBLIC_IPV4}/api/chats/chat2`) //TODO Сделать фетч всех чатов
-        setIsLoading(false)
-    }
+        const userId = await AsyncStorage.getItem("userId");
+
+        try {
+            const response = await axios.get(`http://${process.env.EXPO_PUBLIC_IPV4}/api/users/${userId}/chats`);
+            setChats(response.data.chats);
+            setIsLoading(false);
+        } catch (error) {
+            if (error.response) {
+                // Сервер ответил с кодом состояния, отличным от 2xx
+                console.error('Ошибка ответа сервера:', error.response.status, error.response.data);
+            } else if (error.request) {
+                // Запрос был сделан, но ответ не получен
+                console.error('Сервер не отвечает:', error.request);
+            } else {
+                // Произошла ошибка при настройке запроса
+                console.error('Ошибка настройки запроса:', error.message);
+            }
+            setIsLoading(false);
+        }
+    };
+
 
     React.useEffect(() => {
         chatsFetch()
@@ -50,14 +70,13 @@ const ChatsScreen = ({ navigation }) => {
 
 
             <FlatList
-                refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => chatsFetch()} />}
-                data={testArray}
-                renderItem={({item}) => (
-                    <TouchableOpacity  onPress={() => navigation.navigate('CurrentChat')}>
-                        <ChatListItem props={item}/>
+                refreshControl={<RefreshControl refreshing={isLoading} onRefresh={chatsFetch} />}
+                data={chats}
+                renderItem={({ item }) => (
+                    <TouchableOpacity onPress={() => navigation.navigate('CurrentChat', { chatID: item.chatID })}>
+                        <ChatListItem props={item} />
                     </TouchableOpacity>
                 )}
-
             />
         </Layout>
 
