@@ -1,7 +1,8 @@
+// init.db.js
 const db = require('./db');
 
 db.serialize(() => {
-    // Создаём таблицу пользователей (User)
+    // Таблица пользователей
     db.run(`
     CREATE TABLE IF NOT EXISTS users (
       ID TEXT PRIMARY KEY,
@@ -12,7 +13,7 @@ db.serialize(() => {
     )
   `);
 
-    // Создаём таблицу чатов (Chat)
+    // Таблица чатов
     db.run(`
     CREATE TABLE IF NOT EXISTS chats (
       chatID TEXT PRIMARY KEY,
@@ -22,7 +23,7 @@ db.serialize(() => {
     )
   `);
 
-    // Создаём таблицу сообщений (Message)
+    // Таблица сообщений
     db.run(`
     CREATE TABLE IF NOT EXISTS messages (
       messageID TEXT PRIMARY KEY,
@@ -38,7 +39,8 @@ db.serialize(() => {
 
 db.close((err) => {
     if (err) {
-        return console.error('Ошибка при закрытии базы:', err.message);
+        console.error('Ошибка при закрытии базы данных:', err.message);
+    } else {
+        console.log('Соединение с базой данных закрыто после инициализации.');
     }
-    console.log('Закрыли соединение с базой после инициализации.');
 });

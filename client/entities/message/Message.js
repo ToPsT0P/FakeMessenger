@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import {Text} from "react-native";
+import asyncStorage from "@react-native-async-storage/async-storage/src/AsyncStorage";
 
 const MessageWrapperViewMy = styled.View`
     width: 100%;
@@ -44,10 +45,12 @@ const UserText = styled.Text`
 
 const Message = ({messageData}) => {
 
-    const myUserID = "1"
+    const IuserID = asyncStorage.getItem("userId")
+
+    console.log(messageData)
     return (
         <>
-            {messageData.userID == myUserID
+            {messageData.userSend == IuserID
                 ?
                 <MessageWrapperViewMy>
                     <MessageViewMy>
@@ -60,6 +63,8 @@ const Message = ({messageData}) => {
                         <UserText>{messageData.text}</UserText>
                     </MessageViewOther>
                 </MessageWrapperViewOtherUser>
+
+
 
             }
         </>

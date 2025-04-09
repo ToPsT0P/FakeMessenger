@@ -30,7 +30,7 @@ const ChatsScreen = ({ navigation }) => {
         const userId = await AsyncStorage.getItem("userId");
 
         try {
-            const response = await axios.get(`http://${process.env.EXPO_PUBLIC_IPV4}/api/users/${userId}/chats`);
+            const response = await axios.get(`http://${process.env.EXPO_PUBLIC_IPV4}/api/chats/user/${userId}`);
             setChats(response.data.chats);
             setIsLoading(false);
         } catch (error) {

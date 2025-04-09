@@ -1,24 +1,28 @@
+// server.js
 const express = require('express');
 const http = require('http');
+const cors = require('cors');
 const { Server } = require("socket.io");
-const db = require('./db');
 const { v4: uuidv4 } = require('uuid');
+const db = require('./db');
 
 const app = express();
+app.use(cors());
 app.use(express.json());
-// ===============
-//  CREATE USER
-// ===============
+
+/* ===============================================
+   Ручки REST API
+=============================================== */
+
+// 1. Регистрация пользователя
 app.post('/api/users', (req, res) => {
     const { userName, login, password } = req.body;
-
+    if (!userName || !login || !password) {
+        return res.status(400).json({ error: 'Необходимо указать userName, login и password' });
+    }
     const userID = uuidv4();
     const chats = JSON.stringify([]);
-
-    const sql = `
-        INSERT INTO users (ID, userName, login, password, chats)
-        VALUES (?, ?, ?, ?, ?)
-    `;
+    const sql = `INSERT INTO users (ID, userName, login, password, chats) VALUES (?, ?, ?, ?, ?)`;
     db.run(sql, [userID, userName, login, password, chats], function(err) {
         if (err) {
             console.error(err);
@@ -26,78 +30,12 @@ app.post('/api/users', (req, res) => {
         }
         return res.status(201).json({
             message: 'Пользователь создан',
-            user: {
-                ID: userID,
-                userName,
-                login,
-                password,
-                chats: []
-            }
+            user: { ID: userID, userName, login, chats: [] }
         });
     });
 });
 
-// ===============
-//  GET ALL USERS
-// ===============
-app.get('/api/users', (req, res) => {
-    const sql = 'SELECT * FROM users';
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Ошибка при получении пользователей' });
-        }
-        const users = rows.map(row => {
-            let chatsArray = [];
-            try {
-                chatsArray = JSON.parse(row.chats);
-            } catch (e) {
-                chatsArray = [];
-            }
-            return {
-                ID: row.ID,
-                userName: row.userName,
-                login: row.login,
-                password: row.password,
-                chats: chatsArray
-            };
-        });
-        res.json({ users });
-    });
-});
-
-// ===============
-//  GET USER BY ID
-// ===============
-app.get('/api/users/:id', (req, res) => {
-    const { id } = req.params;
-    const sql = 'SELECT * FROM users WHERE ID = ?';
-    db.get(sql, [id], (err, row) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Ошибка при получении пользователя' });
-        }
-        if (!row) {
-            return res.status(404).json({ error: 'Пользователь не найден' });
-        }
-        let chatsArray = [];
-        try {
-            chatsArray = JSON.parse(row.chats);
-        } catch (e) {
-            chatsArray = [];
-        }
-        res.json({
-            ID: row.ID,
-            userName: row.userName,
-            login: row.login,
-            chats: chatsArray
-        });
-    });
-});
-
-// ===============
-//  LOGIN (AUTHENTICATION)
-// ===============
+// 2. Логин (авторизация)
 app.post('/api/login', (req, res) => {
     const { login, password } = req.body;
     if (!login || !password) {
@@ -112,7 +50,6 @@ app.post('/api/login', (req, res) => {
         if (!row) {
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
-        // Простая проверка пароля без шифрования
         if (row.password !== password) {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
@@ -122,238 +59,109 @@ app.post('/api/login', (req, res) => {
         } catch (e) {
             chatsArray = [];
         }
-        res.json({
-            message: 'Авторизация успешна',
-            user: {
-                ID: row.ID,
-                userName: row.userName,
-                login: row.login,
-                chats: chatsArray
-            }
-        });
+        res.json({ message: 'Авторизация успешна', user: { ID: row.ID, userName: row.userName, login: row.login, chats: chatsArray } });
     });
 });
 
-// ===============
-//  CREATE CHAT
-// ===============
-app.post('/api/chats', (req, res) => {
-    const { chatID, joinedUsers } = req.body;
-    const newChatID = chatID || uuidv4();
-    const usersJSON = JSON.stringify(joinedUsers || []);
-    const messagesJSON = JSON.stringify([]);
-    const lastMessage = '';
-
-    const sql = `
-        INSERT INTO chats (chatID, messages, lastMessage, joinedUsers)
-        VALUES (?, ?, ?, ?)
-    `;
-    db.run(sql, [newChatID, messagesJSON, lastMessage, usersJSON], function(err) {
+// 3. Получение всех пользователей (без пароля)
+app.get('/api/users', (req, res) => {
+    const sql = 'SELECT ID, userName, login FROM users';
+    db.all(sql, [], (err, rows) => {
         if (err) {
             console.error(err);
-            return res.status(500).json({ error: 'Ошибка при создании чата' });
+            return res.status(500).json({ error: 'Ошибка получения пользователей' });
         }
-        return res.status(201).json({
-            message: 'Чат создан',
-            chat: {
-                chatID: newChatID,
-                messages: [],
-                lastMessage: '',
-                joinedUsers: joinedUsers || []
-            }
-        });
+        res.json({ users: rows });
     });
 });
 
-// ===============
-//  GET USER'S CHATS
-// ===============
-app.get('/api/users/:userID/chats', (req, res) => {
+// 4. Получение чатов, в которых состоит пользователь
+app.get('/api/chats/user/:userID', (req, res) => {
     const { userID } = req.params;
-
-    const sql = `
-        SELECT *
-        FROM chats
-        WHERE chatID IN (
-            SELECT chatID
-            FROM chats, json_each(chats.joinedUsers)
-            WHERE json_each.value = ?
-        );
-    `;
-
-    db.all(sql, [userID], (err, rows) => {
-        if (err) {
-            console.error('Ошибка при получении чатов пользователя:', err);
-            return res.status(500).json({ error: 'Ошибка при получении чатов пользователя' });
-        }
-
-        const chats = rows.map(row => ({
-            chatID: row.chatID,
-            messages: JSON.parse(row.messages || '[]'),
-            lastMessage: row.lastMessage,
-            joinedUsers: JSON.parse(row.joinedUsers || '[]')
-        }));
-
-        res.json({ chats });
-    });
-});
-
-
-// ===============
-//  CREATE MESSAGE
-// ===============
-app.post('/api/messages', (req, res) => {
-    const { chatID, text, userSend } = req.body;
-    if (!chatID || !text || !userSend) {
-        return res.status(400).json({ error: 'Не хватает параметров (chatID, text, userSend)' });
-    }
-
-    const newMessageID = uuidv4();
-    const sql = `
-        INSERT INTO messages (messageID, chatID, text, userSend)
-        VALUES (?, ?, ?, ?)
-    `;
-    db.run(sql, [newMessageID, chatID, text, userSend], function(err) {
+    const sql = 'SELECT * FROM chats';
+    db.all(sql, [], (err, rows) => {
         if (err) {
             console.error(err);
-            return res.status(500).json({ error: 'Ошибка при создании сообщения' });
+            return res.status(500).json({ error: 'Ошибка получения чатов' });
         }
-
-        // Обновление чата
-        const selectChat = 'SELECT * FROM chats WHERE chatID = ?';
-        db.get(selectChat, [chatID], (err, row) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ error: 'Ошибка при получении чата' });
-            }
-            if (!row) {
-                return res.status(404).json({ error: 'Чат не найден' });
-            }
-
-            let currentMessages = [];
+        // Фильтруем чаты, где joinedUsers содержит userID
+        const userChats = rows.filter(row => {
             try {
-                currentMessages = JSON.parse(row.messages);
+                const joinedUsers = JSON.parse(row.joinedUsers);
+                return Array.isArray(joinedUsers) && joinedUsers.includes(userID);
             } catch (e) {
-                currentMessages = [];
+                return false;
             }
-            currentMessages.push(newMessageID);
-
-            const updatedMessages = JSON.stringify(currentMessages);
-            const updatedLastMessage = text;
-
-            const updateChat = `
-                UPDATE chats
-                SET messages = ?, lastMessage = ?
-                WHERE chatID = ?
-            `;
-            db.run(updateChat, [updatedMessages, updatedLastMessage, chatID], function(err) {
-                if (err) {
-                    console.error(err);
-                    return res.status(500).json({ error: 'Ошибка при обновлении чата' });
-                }
-
-                return res.status(201).json({
-                    message: 'Сообщение создано и чат обновлён',
-                    newMessage: {
-                        messageID: newMessageID,
-                        chatID,
-                        text,
-                        userSend,
-                        createdTime: new Date().toISOString()
-                    }
-                });
-            });
         });
+        res.json({ chats: userChats });
     });
 });
 
-// Создаем HTTP-сервер на базе Express-приложения
-const server = http.createServer(app);
-// Инициализируем socket.io и разрешаем CORS (при необходимости)
-const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+// 5. Создание нового чата
+app.post('/api/chats', (req, res) => {
+    // Ожидаем:
+    // joinedUsers: массив с идентификаторами участников чата
+    // initialMessage: (опционально) объект { text, userSend }
+    const { joinedUsers, initialMessage } = req.body;
+    if (!joinedUsers || !Array.isArray(joinedUsers) || joinedUsers.length === 0) {
+        return res.status(400).json({ error: 'Нужно указать хотя бы одного участника чата' });
     }
-});
-
-// Socket.IO логика
-io.on("connection", (socket) => {
-    console.log("Новый клиент подключился:", socket.id);
-
-    // Клиент присоединяется к чату
-    socket.on("joinChat", (chatID) => {
-        socket.join(chatID);
-        console.log(`Socket ${socket.id} присоединился к чату ${chatID}`);
-        // Опционально: можно отправить историю сообщений чата,
-        // выполнив запрос к БД по chatID и отправив клиенту через socket.emit
-    });
-
-    // Обработка события отправки сообщения
-    socket.on("sendMessage", (data) => {
-        const { chatID, text, userSend } = data;
-        if (!chatID || !text || !userSend) return;
-        const newMessageID = uuidv4();
-
-        const sql = `
-            INSERT INTO messages (messageID, chatID, text, userSend)
-            VALUES (?, ?, ?, ?)
-        `;
-        db.run(sql, [newMessageID, chatID, text, userSend], function(err) {
-            if (err) {
-                console.error("Ошибка при создании сообщения:", err);
-                return;
-            }
-            // Обновление чата: получаем текущий чат и обновляем сообщения
-            const selectChat = 'SELECT * FROM chats WHERE chatID = ?';
-            db.get(selectChat, [chatID], (err, row) => {
+    const chatID = uuidv4();
+    const messages = [];
+    if (initialMessage) {
+        const messageID = uuidv4();
+        const createdTime = new Date().toISOString();
+        messages.push(messageID);
+        const sqlMsg = `
+      INSERT INTO messages (messageID, chatID, text, userSend, createdTime)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+        db.run(sqlMsg, [messageID, chatID, initialMessage.text || '', initialMessage.userSend || 'system', createdTime], function(err) {
+            if (err) console.error("Ошибка сохранения начального сообщения:", err);
+        });
+    }
+    const messagesJSON = JSON.stringify(messages);
+    const lastMessage = initialMessage ? (initialMessage.text || '') : '';
+    const joinedUsersJSON = JSON.stringify(joinedUsers);
+    const chatSql = `
+    INSERT INTO chats (chatID, messages, lastMessage, joinedUsers)
+    VALUES (?, ?, ?, ?)
+  `;
+    db.run(chatSql, [chatID, messagesJSON, lastMessage, joinedUsersJSON], function(err) {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Ошибка создания чата' });
+        }
+        // Обновляем список чатов для каждого пользователя
+        joinedUsers.forEach(userID => {
+            const sqlSelect = 'SELECT chats FROM users WHERE ID = ?';
+            db.get(sqlSelect, [userID], (err, row) => {
                 if (err || !row) {
-                    console.error("Ошибка при получении чата", err);
+                    console.error(`Ошибка обновления чатов пользователя ${userID}: `, err);
                     return;
                 }
-
-                let currentMessages = [];
+                let userChats = [];
                 try {
-                    currentMessages = JSON.parse(row.messages);
+                    userChats = JSON.parse(row.chats) || [];
                 } catch (e) {
-                    currentMessages = [];
+                    userChats = [];
                 }
-                currentMessages.push(newMessageID);
-                const updatedMessages = JSON.stringify(currentMessages);
-                const updatedLastMessage = text;
-
-                const updateChat = `
-                    UPDATE chats
-                    SET messages = ?, lastMessage = ?
-                    WHERE chatID = ?
-                `;
-                db.run(updateChat, [updatedMessages, updatedLastMessage, chatID], function(err) {
-                    if (err) {
-                        console.error("Ошибка при обновлении чата", err);
-                        return;
-                    }
-                    // Формируем объект нового сообщения и транслируем его в комнату чата
-                    const newMessage = {
-                        messageID: newMessageID,
-                        chatID,
-                        text,
-                        userSend,
-                        createdTime: new Date().toISOString()
-                    };
-                    io.to(chatID).emit("newMessage", newMessage);
-                    console.log("Новое сообщение отправлено:", newMessage);
-                });
+                if (!userChats.includes(chatID)) {
+                    userChats.push(chatID);
+                    const sqlUpdate = 'UPDATE users SET chats = ? WHERE ID = ?';
+                    db.run(sqlUpdate, [JSON.stringify(userChats), userID], function(err) {
+                        if (err) {
+                            console.error(`Ошибка обновления чатов пользователя ${userID}: `, err);
+                        }
+                    });
+                }
             });
         });
-    });
-
-    socket.on("disconnect", () => {
-        console.log("Клиент отключился:", socket.id);
+        res.status(201).json({ message: 'Чат создан', chat: { chatID, messages: [], lastMessage, joinedUsers } });
     });
 });
-// ===============
-//  GET CHAT BY ID
-// ===============
+
+// 6. Получение истории чата (как было у вас)
 app.get('/api/chats/:chatID', (req, res) => {
     const { chatID } = req.params;
     const sql = 'SELECT * FROM chats WHERE chatID = ?';
@@ -365,7 +173,6 @@ app.get('/api/chats/:chatID', (req, res) => {
         if (!row) {
             return res.status(404).json({ error: 'Чат не найден' });
         }
-
         let messagesArray = [];
         let joinedUsersArray = [];
         try {
@@ -375,41 +182,103 @@ app.get('/api/chats/:chatID', (req, res) => {
             messagesArray = [];
             joinedUsersArray = [];
         }
-
-        const placeholders = messagesArray.map(() => '?').join(',');
-        if (!placeholders) {
-            return res.json({
-                chatID: row.chatID,
-                messages: [],
-                lastMessage: row.lastMessage,
-                joinedUsers: joinedUsersArray
-            });
+        if (messagesArray.length === 0) {
+            return res.json({ chatID: row.chatID, messages: [], lastMessage: row.lastMessage, joinedUsers: joinedUsersArray });
         }
-
+        const placeholders = messagesArray.map(() => '?').join(',');
         const sqlMessages = `
-            SELECT *
-            FROM messages
-            WHERE messageID IN (${placeholders})
-            ORDER BY createdTime ASC
-        `;
+      SELECT *
+      FROM messages
+      WHERE messageID IN (${placeholders})
+      ORDER BY createdTime ASC
+    `;
         db.all(sqlMessages, messagesArray, (err, messagesRows) => {
             if (err) {
                 console.error(err);
                 return res.status(500).json({ error: 'Ошибка при получении сообщений' });
             }
-            return res.json({
-                chatID: row.chatID,
-                messages: messagesRows,
-                lastMessage: row.lastMessage,
-                joinedUsers: joinedUsersArray
-            });
+            return res.json({ chatID: row.chatID, messages: messagesRows, lastMessage: row.lastMessage, joinedUsers: joinedUsersArray });
         });
     });
 });
 
-// Запуск сервера
+/* ===============================================
+   Socket.IO – реалтайм обмен сообщениями
+=============================================== */
+
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: { origin: "*", methods: ["GET", "POST"] }
+});
+
+io.on("connection", (socket) => {
+    console.log("Новый клиент подключился:", socket.id);
+
+    // Присоединение к комнате чата
+    socket.on("joinChat", (chatID) => {
+        socket.join(chatID);
+        console.log(`Socket ${socket.id} присоединился к чату ${chatID}`);
+    });
+
+    // Отправка сообщения
+    socket.on("sendMessage", (data) => {
+        const { chatID, text, userSend } = data;
+        if (!chatID || !text || !userSend) {
+            console.warn("Неполные данные для сообщения:", data);
+            return;
+        }
+        const newMessageID = uuidv4();
+        const createdTime = new Date().toISOString();
+
+        const sqlInsert = `
+      INSERT INTO messages (messageID, chatID, text, userSend, createdTime)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+        db.run(sqlInsert, [newMessageID, chatID, text, userSend, createdTime], function(err) {
+            if (err) {
+                console.error("Ошибка при сохранении сообщения:", err);
+                return;
+            }
+            const sqlSelectChat = 'SELECT * FROM chats WHERE chatID = ?';
+            db.get(sqlSelectChat, [chatID], (err, row) => {
+                if (err || !row) {
+                    console.error("Ошибка при обновлении чата", err);
+                    return;
+                }
+                let currentMessages = [];
+                try {
+                    currentMessages = JSON.parse(row.messages);
+                } catch (e) {
+                    currentMessages = [];
+                }
+                currentMessages.push(newMessageID);
+                const updatedMessages = JSON.stringify(currentMessages);
+                const updatedLastMessage = text;
+
+                const sqlUpdateChat = `
+          UPDATE chats
+          SET messages = ?, lastMessage = ?
+          WHERE chatID = ?
+        `;
+                db.run(sqlUpdateChat, [updatedMessages, updatedLastMessage, chatID], function(err) {
+                    if (err) {
+                        console.error("Ошибка при обновлении чата", err);
+                        return;
+                    }
+                    const newMessage = { messageID: newMessageID, chatID, text, userSend, createdTime };
+                    io.to(chatID).emit("newMessage", newMessage);
+                    console.log("Новое сообщение отправлено:", newMessage);
+                });
+            });
+        });
+    });
+
+    socket.on("disconnect", () => {
+        console.log("Клиент отключился:", socket.id);
+    });
+});
+
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Сервер запущен на порту ${PORT}`);
 });
-
