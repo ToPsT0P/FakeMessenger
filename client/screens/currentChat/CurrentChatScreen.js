@@ -63,7 +63,7 @@ const CurrentChatScreen = ({ navigation }) => {
 
     // Получаем историю чата через REST API (без изменений)
     useEffect(() => {
-        fetch(`http://${process.env.EXPO_PUBLIC_IPV4}/api/chats/user/${chatID}`)
+        fetch(`http://${process.env.EXPO_PUBLIC_IPV4}/api/chats/${chatID}`)
             .then((res) => res.json())
             .then((data) => {
                 console.log("Chat history:", data);
@@ -84,13 +84,10 @@ const CurrentChatScreen = ({ navigation }) => {
         });
 
         socketRef.current.on("connect", () => {
-            console.log("Socket connected:", socketRef.current.id);
             socketRef.current.emit("joinChat", chatID);
-            console.log("Emitted joinChat for:", chatID);
         });
 
         socketRef.current.on("newMessage", (message) => {
-            console.log("Received new message:", message);
             if (message.chatID === chatID) {
                 setMessages((prev) => [...prev, message]);
             }
@@ -117,22 +114,11 @@ const CurrentChatScreen = ({ navigation }) => {
             text: inputText,
             userSend: senderID,
         };
-        console.log("Sending message:", messageData);
-        // Отправляем сообщение через сокет
+
         socketRef.current.emit("sendMessage", messageData);
-        // Можно добавить временное отображение сообщения
-        setMessages((prev) => [
-            ...prev,
-            {
-                messageID: Date.now().toString(),
-                chatID,
-                text: inputText,
-                userSend: senderID,
-                createdTime: new Date().toISOString(),
-            },
-        ]);
         setInputText("");
     };
+
 
     return (
         <Layout>
@@ -143,11 +129,7 @@ const CurrentChatScreen = ({ navigation }) => {
                         <IconAwesome name="long-arrow-left" size={24} color="#fff" />
                     </TouchableOpacity>
                 }
-                rightButton={
-                    <TouchableOpacity>
-                        <IconEntypo name="dots-three-horizontal" size={24} color="#fff" />
-                    </TouchableOpacity>
-                }
+
                 isSearchBar={false}
             />
 
@@ -161,7 +143,6 @@ const CurrentChatScreen = ({ navigation }) => {
             </BackgroundImage>
 
             <ChatTextInputView style={{ height: inputHeight }}>
-                <IconMaterialCommunityIcons name="sticker-emoji" size={30} color="#fff" />
                 <ChatTextInput
                     multiline
                     onContentSizeChange={handleContentSizeChange}

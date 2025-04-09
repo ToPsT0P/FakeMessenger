@@ -32,6 +32,7 @@ const ChatsScreen = ({ navigation }) => {
         try {
             const response = await axios.get(`http://${process.env.EXPO_PUBLIC_IPV4}/api/chats/user/${userId}`);
             setChats(response.data.chats);
+
             setIsLoading(false);
         } catch (error) {
             if (error.response) {
@@ -62,10 +63,10 @@ const ChatsScreen = ({ navigation }) => {
                         <IconAwesome name="user-o" size={24} color="#fff" />
                     </TouchableOpacity>}
                     rightButton=
-                    {<TouchableOpacity>
+                    {<TouchableOpacity onPress={() => navigation.navigate('CreateChat')}>
                         <IconAwesome name="plus-square-o" size={30} color="#fff" />
                     </TouchableOpacity>}
-                isSearchBar={true}
+                isSearchBar={false}
             />
 
 

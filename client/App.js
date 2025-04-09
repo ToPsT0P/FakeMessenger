@@ -7,6 +7,7 @@ import {StatusBar} from "react-native";
 import CurrentChatScreen from "./screens/currentChat/CurrentChatScreen";
 import LoginScreen from "./screens/LoginOrAuth/LoginScreen";
 import AuthScreen from "./screens/LoginOrAuth/AuthScreen";
+import CreateChat from "./screens/createChat/CreateChat";
 
 
 
@@ -23,6 +24,7 @@ export default function App() {
                 <Stack.Screen name="CurrentChat" component={CurrentChatScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="CreateChat" component={CreateChat} options={{ headerShown: false }} />
 
             </Stack.Navigator>
         </NavigationContainer>

@@ -1,76 +1,74 @@
-import styled from "styled-components";
-import {Text} from "react-native";
-import asyncStorage from "@react-native-async-storage/async-storage/src/AsyncStorage";
+import React, { useState, useEffect } from "react";
+import styled from "styled-components/native"; // или "styled-components", если это RN
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const MessageWrapperViewMy = styled.View`
     width: 100%;
     padding: 5px;
-    height: fit-content;
     margin-bottom: 10px;
     display: flex;
     align-items: flex-end;
-
-`
+`;
 
 const MessageWrapperViewOtherUser = styled.View`
     width: 100%;
-    height: fit-content;
     margin-bottom: 10px;
     display: flex;
-`
+`;
 
 const MessageViewMy = styled.View`
     width: fit-content;
     max-width: 80%;
-    height: fit-content;
     padding: 10px;
     min-height: 55px;
-    display: flex;
-    background: #7a42d1;
-`
+    background-color: #7a42d1;
+`;
 
 const MessageViewOther = styled.View`
     width: fit-content;
     max-width: 80%;
     padding: 10px;
-    height: fit-content;
     min-height: 55px;
-    display: flex;
-    background: #262628;
-`
+    background-color: #262628;
+`;
 
 const UserText = styled.Text`
     color: white;
-`
+`;
 
-const Message = ({messageData}) => {
+const Message = ({ messageData }) => {
+    const [currentUserId, setCurrentUserId] = useState(null);
 
-    const IuserID = asyncStorage.getItem("userId")
+    // Загружаем userId из AsyncStorage при монтировании компонента
+    useEffect(() => {
+        AsyncStorage.getItem("userId")
+            .then((id) => {
+                setCurrentUserId(id);
+            })
+            .catch((err) => console.error("Error loading userId", err));
+    }, []);
 
-    console.log(messageData)
+    // Пока идентификатор пользователя ещё не загружен – ничего не рендерим (или можно сделать лоадер)
+    if (currentUserId === null) {
+        return null;
+    }
+
     return (
         <>
-            {messageData.userSend == IuserID
-                ?
+            {messageData.userSend === currentUserId ? (
                 <MessageWrapperViewMy>
                     <MessageViewMy>
                         <UserText>{messageData.text}</UserText>
                     </MessageViewMy>
                 </MessageWrapperViewMy>
-                :
+            ) : (
                 <MessageWrapperViewOtherUser>
                     <MessageViewOther>
                         <UserText>{messageData.text}</UserText>
                     </MessageViewOther>
                 </MessageWrapperViewOtherUser>
-
-
-
-            }
+            )}
         </>
-
-
-
     );
 };
 

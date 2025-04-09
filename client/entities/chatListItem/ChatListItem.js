@@ -1,5 +1,7 @@
 import styled from "styled-components/native"
-import defaultAvatar from "../../shared/ico/defaultAvatart.svg"
+import defaultAvatar from "../../shared/ico/defAv.png"
+import asyncStorage from "@react-native-async-storage/async-storage/src/AsyncStorage";
+import {useEffect, useState} from "react";
 
 const Chat = styled.View`
     display: flex;

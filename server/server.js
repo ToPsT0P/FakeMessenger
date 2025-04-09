@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
@@ -14,7 +13,6 @@ app.use(express.json());
    Ручки REST API
 =============================================== */
 
-// 1. Регистрация пользователя
 app.post('/api/users', (req, res) => {
     const { userName, login, password } = req.body;
     if (!userName || !login || !password) {
@@ -35,7 +33,6 @@ app.post('/api/users', (req, res) => {
     });
 });
 
-// 2. Логин (авторизация)
 app.post('/api/login', (req, res) => {
     const { login, password } = req.body;
     if (!login || !password) {
@@ -63,7 +60,34 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// 3. Получение всех пользователей (без пароля)
+app.get('/api/users/:userID', (req, res) => {
+    const { userID } = req.params;
+    const sql = 'SELECT ID, userName, login, chats FROM users WHERE ID = ?';
+    db.get(sql, [userID], (err, row) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Ошибка получения пользователя' });
+        }
+        if (!row) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+        let chatsArray = [];
+        try {
+            chatsArray = JSON.parse(row.chats);
+        } catch (e) {
+            chatsArray = [];
+        }
+        res.json({
+            user: {
+                ID: row.ID,
+                userName: row.userName,
+                login: row.login,
+                chats: chatsArray
+            }
+        });
+    });
+});
+
 app.get('/api/users', (req, res) => {
     const sql = 'SELECT ID, userName, login FROM users';
     db.all(sql, [], (err, rows) => {
@@ -75,7 +99,6 @@ app.get('/api/users', (req, res) => {
     });
 });
 
-// 4. Получение чатов, в которых состоит пользователь
 app.get('/api/chats/user/:userID', (req, res) => {
     const { userID } = req.params;
     const sql = 'SELECT * FROM chats';
@@ -97,7 +120,6 @@ app.get('/api/chats/user/:userID', (req, res) => {
     });
 });
 
-// 5. Создание нового чата
 app.post('/api/chats', (req, res) => {
     // Ожидаем:
     // joinedUsers: массив с идентификаторами участников чата
